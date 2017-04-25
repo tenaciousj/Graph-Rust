@@ -17,14 +17,13 @@
 * 2) EOF stops the program (cmd+d on Mac)
 */
 
-#![allow(dead_code)]
-use std::collections::HashMap;
 use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
 use std::env;
 use std::fs::File;
+use std::collections::HashSet;
 
 pub struct Graph {
-	nodes: Vec<Node>,
+	nodes: HashSet<Node>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, PartialOrd, Ord, Hash)]
@@ -91,17 +90,22 @@ impl Graph {
 
 	pub fn new() -> Self {
         Graph {
-            nodes: Vec::new(),
+            nodes: HashSet::new(),
         }
     }
-
+    // TODO: handle duplicates
 	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<String>) {
-		let rest = new_nodes_str.split_off(1);
+		let rest;
+		if new_nodes_str.len() == 0 {
+			return;
+		} else {
+			rest = new_nodes_str.split_off(1);
+		}
 		let n = Node {
 			name: new_nodes_str[0].clone(),
 			neighbors: rest,
 		};
-		self.nodes.push(n);
+		self.nodes.insert(n);
 		new_nodes_str.pop();
 	}
 
@@ -149,12 +153,10 @@ impl Graph {
 		vec![]
 	}
 
-
 	pub fn print_find_node<W: Write>(&self, mut writer: W, found: &Option<&Node>){
 		let f = found.unwrap();
 		writeln!(writer, "{}", f.name);
 	}
-
 
 	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<String>) {
 		if path.len() == 0 {
@@ -167,16 +169,54 @@ impl Graph {
 		writeln!(writer,"");
 	}
 
-	pub fn print_edge<W: Write>(&self, mut writer: W) {
-		for n in self.nodes.iter() {
-			write!(writer, "Node: {}\nNeighbors: ", n.name);
-			for neighbor in n.neighbors.iter() {
-				write!(writer, "{}, ", neighbor);
-			}
-			write!(writer, "\n");
-		}
-	}
-
 }
 
+#[cfg(test)]
+mod tests {
+	use super::{Graph, Node};
+	use std::collections::HashSet;
+	#[test]
+	fn new_test() {
+		let graph = Graph::new();
+		assert_eq!(graph.nodes.len(), 0);
+	}
 
+	#[test]
+	fn add_0_nodes() {
+		let mut hs = HashSet::new();
+		add_nodes_test_helper(&mut vec![], &hs);
+
+	}
+
+	#[test]
+	fn add_1_nodes_no_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec![]});
+		add_nodes_test_helper(&mut vec!["a".to_string()], &hs);
+
+	}
+
+	#[test]
+	fn add_1_nodes_1_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		add_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hs);
+	}
+
+	fn add_1_nodes_2_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
+		add_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
+			&hs);
+	}
+
+
+
+	fn add_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashSet<Node>) {
+		let mut g = Graph::new();
+		g.add_nodes(&mut input);
+		assert_eq!(g.nodes.len(), expected_nodes.len());
+		assert_eq!(g.nodes, *expected_nodes);
+
+	}
+}
