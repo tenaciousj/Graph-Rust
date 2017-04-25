@@ -95,7 +95,7 @@ impl Graph {
             nodes: HashMap::new(),
         }
     }
-
+    //TODO: make sure that a node does not add itself as neighbor 
 	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<String>) {
 		if new_nodes_str.len() == 0 {
 			return;
@@ -221,6 +221,15 @@ mod add_node_tests {
 	}
 
 	#[test]
+	fn add_1_nodes_dup_neighbor() {
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), 
+			neighbors: vec!["b".to_string(), "c".to_string()]});
+		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
+			"c".to_string(),"b".to_string() ], &hm);
+	}
+
+	#[test]
 	fn add_2_nodes_0_neighbor() {
 		let mut hm = HashMap::new();
 		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
@@ -292,4 +301,12 @@ mod find_node_tests {
 		assert_eq!(graph.find_node(&input), expected_out);
 	}
 
+}
+
+#[cfg(test)] 
+mod path_finder_tests {
+	use super::{Graph, Node};
+
+	#[test] 
+	
 }
