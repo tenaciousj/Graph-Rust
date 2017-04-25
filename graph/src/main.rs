@@ -12,6 +12,7 @@
 *		b) Every node mentioned as a neighbor must start a line
 *		c) No node may start more than one line
 *       d) The second instance of any duplicate node overwrites the previous instance
+* 		e) Assumes that a node will not list itself as a neighbor
 *	 For stdin
 *		a) A query consists of two node names, a starting node (src) and an ending node (dest)
 * 		b) If a node is not in the graph, program will output that path does not exist
@@ -240,14 +241,6 @@ mod add_node_tests {
 			&hm);
 	}
 
-	#[test]
-	fn add_1_nodes_dup_neighbor() {
-		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), 
-			neighbors: vec!["b".to_string(), "c".to_string()]});
-		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
-			"c".to_string(),"b".to_string() ], &hm);
-	}
 
 	#[test]
 	fn add_2_nodes_0_neighbor() {
