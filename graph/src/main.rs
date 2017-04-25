@@ -22,14 +22,9 @@ fn main() {
 	}
 	let graph_file = &args[1];
 	let graph_result = read_graph(&graph_file);
-	let mut graph;
 	match graph_result {
-		Ok(g) => {
-			graph = g; 
-			// graph.print_edge(stdout());
-
-			let path = graph.bfs("a", "d");
-			graph.print_path(stdout(), &path);
+		Ok(graph) => {
+			read_input(stdin(), &graph);
 		},
 		Err(e) => println!("error! {}", e),
 	}
@@ -52,7 +47,26 @@ fn read_graph(filename: &str) ->Result<Graph>{
 	Ok(g)
 }
 
+fn read_input<R: Read> (reader: R, graph: &Graph) {
+	let mut lines = BufReader::new(reader).lines();
 
+	while let Some(Ok(line)) = lines.next() {
+		let inputs_iter = line.trim().split_whitespace();
+		let mut inputs = vec![];
+		for input in inputs_iter {
+			inputs.push(input);
+		}
+		if inputs.len() != 2 {
+			println!("please enter nodes in the following format: src dst");
+			continue;
+		}
+		let src = inputs.get(0).unwrap();
+		let dst = inputs.get(1).unwrap();
+		let path = graph.bfs(src, dst);
+		graph.print_path(stdout(), &path);
+
+	}
+}
 
 impl Graph {
 
@@ -105,22 +119,8 @@ impl Graph {
 					curr_path.pop();
 				}
 			}
-			// let node_name = queue.pop().unwrap();
-			// paths.push(node_name.to_string());
-			// if node_name == to {
-			// 	return paths;
-			// }
-			// let node = self.find_node(node_name).unwrap();
-			// for neighbor in node.neighbors.iter() {
-			// 	if !visited.contains(&neighbor) {
-			// 		visited.push(&neighbor);
-			// 		queue.push(neighbor);
-			// 	}
-			// }
-
 		}
 		vec![]
-
 	}
 
 
@@ -130,14 +130,18 @@ impl Graph {
 	}
 
 
-	pub fn print_path<W: Write>(&mut self, mut writer: W, path: &Vec<String>) {
+	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<String>) {
+		if path.len() == 0 {
+			writeln!(writer, "no path!");
+			return;
+		}
 		for n in path.iter() {
 			write!(writer, "{} ", n);
 		}
 		writeln!(writer,"");
 	}
 
-	pub fn print_edge<W: Write>(&mut self, mut writer: W) {
+	pub fn print_edge<W: Write>(&self, mut writer: W) {
 		for n in self.nodes.iter() {
 			write!(writer, "Node: {}\nNeighbors: ", n.name);
 			for neighbor in n.neighbors.iter() {
