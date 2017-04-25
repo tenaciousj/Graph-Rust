@@ -338,28 +338,47 @@ mod path_finder_tests {
 
 	#[test]
 	fn path_to_self() {
-		path_finder_helper("a", "a", &vec![]);
+		path_finder_helper("a", "a", &vec!["a".to_string()]);
 	}
 
 	#[test]
 	fn src_does_not_exist() {
-		path_finder_helper("e", "a", &vec![]);
+		path_finder_helper("g", "a", &vec![]);
 	}
 
 	#[test]
 	fn dst_does_not_exist() {
+		path_finder_helper("a", "g", &vec![]);
+	}
+	#[test]
+	fn path_does_not_exist() {
 		path_finder_helper("a", "e", &vec![]);
 	}
+
+	#[test]
+	fn one_step_path() {
+		path_finder_helper("a", "d", &vec!["a".to_string(), "d".to_string()]);
+	}
+
+	#[test]
+	fn two_step_path() {
+		path_finder_helper("a", "c", &vec!["a".to_string(), "d".to_string(), "c".to_string()]);
+	}
+
 	fn path_finder_helper(src: &str, dst: &str, expected_out: &Vec<String>) {
 		let mut g = Graph::new();
 		g.add_nodes(&mut vec!["a".to_string(), "b".to_string(), "d".to_string()]);
 		g.add_nodes(&mut vec!["b".to_string(), "a".to_string(), "d".to_string()]);
 		g.add_nodes(&mut vec!["c".to_string()]);
 		g.add_nodes(&mut vec!["d".to_string(), "c".to_string()]);
+		g.add_nodes(&mut vec!["e".to_string(), "f".to_string()]);
+		g.add_nodes(&mut vec!["f".to_string(), "e".to_string()]);
+
 		let output = g.path_finder(src, dst);
+		assert_eq!(output.len(), expected_out.len());
 		let zip_iter = output.iter().zip(expected_out.iter());
 		for (o, eo) in zip_iter {
-			assert_eq!(o, eo);
+			assert_eq!(*o, *eo);
 		}
 	}
 }
