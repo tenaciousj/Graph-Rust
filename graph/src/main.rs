@@ -1,7 +1,10 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
-use std::fmt::{Display,Formatter,Result};
-use std::io::{Read,BufReader,BufRead,stdout,Write,stdin};
+use std::fmt::{Display,Formatter};
+use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
+use std::env;
+use std::fs::File;
+
 
 pub struct Graph {
 	nodes: Vec<Node>,
@@ -15,6 +18,13 @@ pub struct Node {
 }
 
 fn main() {
+	let args: Vec<String> = env::args().collect();
+	if args.len() != 2 {
+		println!("usage: graph graph.dat");
+		return
+	}
+	let graph_file = &args[1];
+	// let graph = read_graph(&graph_file).unwrap();
 	let mut g = Graph::new();
 	let mut v = Vec::new();
 	v.push("a".to_string());
@@ -25,7 +35,25 @@ fn main() {
 	g.print_edge(stdout());
 }
 
-fn read_input_into_graph<R: Read>(reader: R, mut graph: Graph) {
+// fn read_graph(filename: &str) -> std::io::Result<Graph>{
+// 	let file = File::open(filename)?;
+
+// 	let mut g = Graph::new();
+// 	let mut nodes = vec![];
+
+// 	let mut buf_reader = BufReader::new(file);
+// 	let mut contents = String::new();
+// 	buf_reader.read_to_string(&mut contents)?;
+// 	let split_contents = contents.trim().split_whitespace();
+// 	for n in split_contents {
+// 		nodes.push(n);
+// 	}
+// 	g.add_nodes(&mut nodes);
+// 	Some(g)
+// 	"yo".to_string()
+// }
+
+fn read_input_into_graph<R: Read>(reader: R) {
 	let mut nodes: Vec<Node> = vec![];
 	let mut lines = BufReader::new(reader).lines();
 
@@ -65,21 +93,14 @@ impl Graph {
 	}
 	pub fn print_edge<W: Write>(&mut self, mut writer: W) {
 		for n in self.nodes.iter() {
-			writeln!(writer, "{}", n);
+			write!(writer, "Node: {}\nNeighbors: ", n.name);
+			for neighbor in n.neighbors.iter() {
+				write!(writer, "{}, ", neighbor);
+			}
+			write!(writer, "\n");
 		}
 	}
 	// pub fn bfs(&mut self) -> Vec<Node> {
 
 	// }
-}
-
-impl Display for Node {
-	fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Name: {} -- ", self.name);
-        write!(f, "neighbors: ");
-        for n in self.neighbors.iter() {
-        	write!(f, "{} ", n);
-        }
-        Ok(())
-    }
 }
