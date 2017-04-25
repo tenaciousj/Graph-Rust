@@ -23,14 +23,14 @@ use std::env;
 use std::fs::File;
 use std::collections::{HashSet, HashMap};
 
+pub type NodeName = String;
 pub struct Graph {
 	nodes: HashMap<String, Node>,
 }
 
 #[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Node {
-	name: String,
-	neighbors: Vec<String>,
+	neighbors: Vec<NodeName>,
 }
 
 fn main() {
@@ -97,19 +97,29 @@ impl Graph {
     }
     //TODO: make sure that a node does not add itself as neighbor 
 	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<String>) {
+		//no new nodes were inputted
 		if new_nodes_str.len() == 0 {
 			return;
 		}
 		let mut rest = new_nodes_str.split_off(1);
-		rest.sort();
 		//remove duplicates
+		rest.sort();
 		rest.dedup();
-		let n = Node {
-			name: new_nodes_str[0].clone(),
-			neighbors: rest,
-		};
-		self.nodes.insert(new_nodes_str[0].clone(), n);
-		new_nodes_str.pop();
+
+		//add neighbors to current node
+		{
+			let entry = self.nodes.entry(new_nodes_str[0].clone()).or_insert(Node {neighbors: Vec::new()});
+			entry.neighbors.append(&mut rest.clone());
+		}
+
+		//for each neighbor of current node, add itself to its neighbor's "neighbors" list
+		for neighbor in rest {
+			let nes = self.nodes.entry(neighbor).or_insert(Node {neighbors: Vec::new()});
+			nes.neighbors.push(new_nodes_str[0].clone());
+
+		}
+		//will use this vec again in read_graph...clear it out
+		new_nodes_str.drain(..);
 	}
 
 	pub fn find_node(&self, find: &str) -> Option<&Node> {
@@ -117,7 +127,7 @@ impl Graph {
 	}
 
 	pub fn bfs(&self, from: &str, to: &str) -> Vec<String> {
-
+		//vec deque
 		let mut queue = Vec::new();
 		let mut visited = HashSet::<String>::new();
 		let mut init_path = Vec::new();
@@ -129,20 +139,25 @@ impl Graph {
 			if curr_path_option.is_none() { continue; }
 
 			let mut curr_path = curr_path_option.unwrap();
+			/*
+				while let Some(x) = q.pop() {}
+				(String, Vec<String>) because of last()
+			*/
 			let curr_node_name = curr_path.last().unwrap().clone();
 
 			if curr_node_name == to {
 				return curr_path;
 			}
-
+			//if let some(x) = self.find_node
+			//else continue;
 			let node_option = self.find_node(curr_node_name.as_str());
 			if node_option.is_none() { continue; }
 
 			let node = node_option.unwrap();
 			visited.insert(curr_node_name);
-			for neighbor in node.neighbors.iter() {
+			for neighbor in &node.neighbors {
 				if !visited.contains(neighbor) {
-					curr_path.push(neighbor.clone().to_string());
+					curr_path.push(neighbor.to_string());
 					queue.push(curr_path.clone());
 					curr_path.pop();
 				}
@@ -162,7 +177,7 @@ impl Graph {
 		}
 		writeln!(writer,"");
 	}
-	
+
 	// pub fn print_find_node<W: Write>(&self, mut writer: W, found: &Option<&Node>){
 	// 	let f = found.unwrap();
 	// 	writeln!(writer, "{}", f.name);
