@@ -1,6 +1,5 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
-use std::fmt::{Display,Formatter};
 use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
 use std::env;
 use std::fs::File;
