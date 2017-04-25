@@ -1,6 +1,8 @@
 #![allow(dead_code)]
-use std::fmt::{Display,Formatter,Result};
-use std::io::{Read,BufReader,BufRead,stdout,Write,stdin};
+use std::collections::HashMap;
+use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
+use std::env;
+use std::fs::File;
 
 pub struct Graph {
 	nodes: Vec<Node>,
@@ -13,32 +15,42 @@ pub struct Node {
 }
 
 fn main() {
-	let mut g = Graph::new();
-	//pooooooooooooooooooop
-	// let mut v = Vec::new();
-	// v.push("a".to_string());
-	// v.push("b".to_string());
-	// v.push("c".to_string());
-	// g.add_nodes(&mut v);
-	// g.print_find_node(stdout(), &g.find_node("a"));
+	let args: Vec<String> = env::args().collect();
+	if args.len() != 2 {
+		println!("usage: graph graph.dat");
+		return
+	}
+	let graph_file = &args[1];
+	let graph_result = read_graph(&graph_file);
+	let mut graph;
+	match graph_result {
+		Ok(g) => {
+			graph = g; 
+			// graph.print_edge(stdout());
 
-	// let path = g.bfs("a", "b");
-	// g.print_path(stdout(), &path);
+			let path = graph.bfs("a", "d");
+			graph.print_path(stdout(), &path);
+		},
+		Err(e) => println!("error! {}", e),
+	}
 }
 
-// fn read_input_into_graph<R: Read>(reader: R, mut graph: Graph) {
-// 	let mut nodes: Vec<Node> = vec![];
-// 	let mut lines = BufReader::new(reader).lines();
+fn read_graph(filename: &str) ->Result<Graph>{
+	let file = File::open(filename)?;
 
-// 	while let Some(Ok(line)) = lines.next() {
-// 		let node_names = line.split(" ");
-// 		for n in node_names {
-// 			nodes.push(Node { name: n.to_string(), });
-// 		}
-// 		graph.add_nodes(nodes.drain(..).collect());
-// 	}
-// }
+	let mut g = Graph::new();
+	let mut nodes = vec![];
 
+	let mut lines = BufReader::new(file).lines();
+	while let Some(Ok(line)) = lines.next() {
+		let split_line = line.trim().split_whitespace();
+		for word in split_line {
+			nodes.push(word.to_string());
+		}
+		g.add_nodes(&mut nodes);
+	}
+	Ok(g)
+}
 
 
 
@@ -57,6 +69,7 @@ impl Graph {
 			neighbors: rest,
 		};
 		self.nodes.push(n);
+		new_nodes_str.pop();
 	}
 
 	pub fn find_node(&self, find: &str) -> Option<&Node> {
@@ -68,26 +81,42 @@ impl Graph {
 		None
 	}
 
-	pub fn bfs(&mut self, from: &str, to: &str) -> Vec<String> {
-		let mut queue = Vec::new();
-		let mut visited = Vec::<&String>::new();
-		let mut path = Vec::<String>::new();
-
-		queue.push(from);
+	pub fn bfs(&self, from: &str, to: &str) -> Vec<String> {
+		let mut queue = Vec::<Vec<String>>::new();
+		let mut visited = Vec::new();
+		let mut path = Vec::new();
+		path.push(from.to_string());
+		queue.push(path);
 
 		while !queue.is_empty() {
-			let node_name = queue.pop().unwrap();
-			path.push(node_name.to_string());
-			if node_name == to {
-				return path;
+			let mut curr_path = queue.pop().unwrap();
+			
+			let curr_node_name = curr_path.last().unwrap().clone();
+			if curr_node_name == to {
+				return curr_path;
 			}
-			let node = self.find_node(node_name).unwrap();
+
+			let node = self.find_node(curr_node_name.as_str()).unwrap();
+			visited.push(curr_node_name);
 			for neighbor in node.neighbors.iter() {
 				if !visited.contains(&neighbor) {
-					visited.push(&neighbor);
-					queue.push(neighbor);
+					curr_path.push(neighbor.clone().to_string());
+					queue.push(curr_path.clone());
+					curr_path.pop();
 				}
 			}
+			// let node_name = queue.pop().unwrap();
+			// paths.push(node_name.to_string());
+			// if node_name == to {
+			// 	return paths;
+			// }
+			// let node = self.find_node(node_name).unwrap();
+			// for neighbor in node.neighbors.iter() {
+			// 	if !visited.contains(&neighbor) {
+			// 		visited.push(&neighbor);
+			// 		queue.push(neighbor);
+			// 	}
+			// }
 
 		}
 		vec![]
@@ -103,20 +132,21 @@ impl Graph {
 
 	pub fn print_path<W: Write>(&mut self, mut writer: W, path: &Vec<String>) {
 		for n in path.iter() {
-			writeln!(writer, "{}", n);
+			write!(writer, "{} ", n);
+		}
+		writeln!(writer,"");
+	}
+
+	pub fn print_edge<W: Write>(&mut self, mut writer: W) {
+		for n in self.nodes.iter() {
+			write!(writer, "Node: {}\nNeighbors: ", n.name);
+			for neighbor in n.neighbors.iter() {
+				write!(writer, "{}, ", neighbor);
+			}
+			write!(writer, "\n");
 		}
 	}
 
-
 }
 
-impl Display for Node {
-	fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Name: {} -- ", self.name);
-        write!(f, "neighbors: ");
-        for n in self.neighbors.iter() {
-        	write!(f, "{} ", n);
-        }
-        Ok(())
-    }
-}
+
