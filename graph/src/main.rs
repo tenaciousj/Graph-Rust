@@ -172,13 +172,13 @@ impl Graph {
 
 	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<NodeName>) {
 		if path.len() == 0 {
-			writeln!(writer, "no path!");
-			return;
+			writeln!(writer, "no path!").unwrap();
+		} else {
+			for n in path.iter() {
+				write!(writer, "{} ", n).unwrap();
+			}
+			writeln!(writer,"").unwrap();
 		}
-		for n in path.iter() {
-			write!(writer, "{} ", n);
-		}
-		writeln!(writer,"");
 	}
 
 }
