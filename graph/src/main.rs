@@ -307,11 +307,11 @@ mod add_node_tests {
 #[cfg(test)]
 mod find_node_tests {
 	use super::Graph;
-	use std::collections::HashMap;
+	use std::collections::HashSet;
 
 	#[test]
 	fn exist_test() {
-		find_node_helper("a".to_string(), Some(&vec![]));
+		find_node_helper("a".to_string(), Some(&HashSet::new()));
 	}
 	
 	#[test]
@@ -320,7 +320,7 @@ mod find_node_tests {
 
 	}
 	
-	fn find_node_helper(input: String, expected_out: Option<&Vec<String>>) {
+	fn find_node_helper(input: String, expected_out: Option<&HashSet<String>>) {
 		let mut graph = Graph::new();
 		graph.add_nodes(&mut vec!["a".to_string()]);
 
@@ -332,7 +332,6 @@ mod find_node_tests {
 #[cfg(test)] 
 mod path_finder_tests {
 	use super::Graph;
-	use std::collections::{HashSet, HashMap};
 
 	#[test]
 	fn path_to_self() {
