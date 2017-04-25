@@ -1,7 +1,9 @@
 #![allow(dead_code)]
 use std::collections::HashMap;
-use std::fmt::{Display,Formatter,Result};
-use std::io::{Read,BufReader,BufRead,stdout,Write,stdin};
+use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
+use std::env;
+use std::fs::File;
+
 
 pub struct Graph {
 	nodes: Vec<Node>,
@@ -15,17 +17,42 @@ pub struct Node {
 }
 
 fn main() {
-	let mut g = Graph::new();
-	let mut v = Vec::new();
-	v.push("a".to_string());
-	v.push("b".to_string());
-	v.push("c".to_string());
-	g.add_nodes(&mut v);
-	// read_input_into_graph(stdin(), g);
-	g.print_edge(stdout());
+	let args: Vec<String> = env::args().collect();
+	if args.len() != 2 {
+		println!("usage: graph graph.dat");
+		return
+	}
+	let graph_file = &args[1];
+	let graph_result = read_graph(&graph_file);
+	let mut graph;
+	match graph_result {
+		Ok(g) => {
+			graph = g; 
+			graph.print_edge(stdout());
+		},
+		Err(e) => println!("error! {}", e),
+	}
+	// read_input_into_graph(stdin(), g);}
 }
 
-fn read_input_into_graph<R: Read>(reader: R, mut graph: Graph) {
+fn read_graph(filename: &str) ->Result<Graph>{
+	let file = File::open(filename)?;
+
+	let mut g = Graph::new();
+	let mut nodes = vec![];
+
+	let mut lines = BufReader::new(file).lines();
+	while let Some(Ok(line)) = lines.next() {
+		let split_line = line.trim().split_whitespace();
+		for word in split_line {
+			nodes.push(word.to_string());
+		}
+		g.add_nodes(&mut nodes);
+	}
+	Ok(g)
+}
+
+fn read_input_into_graph<R: Read>(reader: R) {
 	let mut nodes: Vec<Node> = vec![];
 	let mut lines = BufReader::new(reader).lines();
 
@@ -53,6 +80,7 @@ impl Graph {
 			neighbors: rest,
 		};
 		self.nodes.push(n);
+		new_nodes_str.pop();
 	}
 
 	fn find_node(&mut self, find: &str) -> Option<&Node> {
@@ -65,21 +93,14 @@ impl Graph {
 	}
 	pub fn print_edge<W: Write>(&mut self, mut writer: W) {
 		for n in self.nodes.iter() {
-			writeln!(writer, "{}", n);
+			write!(writer, "Node: {}\nNeighbors: ", n.name);
+			for neighbor in n.neighbors.iter() {
+				write!(writer, "{}, ", neighbor);
+			}
+			write!(writer, "\n");
 		}
 	}
 	// pub fn bfs(&mut self) -> Vec<Node> {
 
 	// }
-}
-
-impl Display for Node {
-	fn fmt(&self, f: &mut Formatter) -> Result {
-        write!(f, "Name: {} -- ", self.name);
-        write!(f, "neighbors: ");
-        for n in self.neighbors.iter() {
-        	write!(f, "{} ", n);
-        }
-        Ok(())
-    }
 }
