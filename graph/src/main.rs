@@ -23,34 +23,34 @@ fn main() {
 		return
 	}
 	let graph_file = &args[1];
-	// let graph = read_graph(&graph_file).unwrap();
-	let mut g = Graph::new();
-	let mut v = Vec::new();
-	v.push("a".to_string());
-	v.push("b".to_string());
-	v.push("c".to_string());
-	g.add_nodes(&mut v);
-	// read_input_into_graph(stdin(), g);
-	g.print_edge(stdout());
+	let graph_result = read_graph(&graph_file);
+	let mut graph;
+	match graph_result {
+		Ok(g) => {
+			graph = g; 
+			graph.print_edge(stdout());
+		},
+		Err(e) => println!("error! {}", e),
+	}
+	// read_input_into_graph(stdin(), g);}
 }
 
-// fn read_graph(filename: &str) -> std::io::Result<Graph>{
-// 	let file = File::open(filename)?;
+fn read_graph(filename: &str) ->Result<Graph>{
+	let file = File::open(filename)?;
 
-// 	let mut g = Graph::new();
-// 	let mut nodes = vec![];
+	let mut g = Graph::new();
+	let mut nodes = vec![];
 
-// 	let mut buf_reader = BufReader::new(file);
-// 	let mut contents = String::new();
-// 	buf_reader.read_to_string(&mut contents)?;
-// 	let split_contents = contents.trim().split_whitespace();
-// 	for n in split_contents {
-// 		nodes.push(n);
-// 	}
-// 	g.add_nodes(&mut nodes);
-// 	Some(g)
-// 	"yo".to_string()
-// }
+	let mut lines = BufReader::new(file).lines();
+	while let Some(Ok(line)) = lines.next() {
+		let split_line = line.trim().split_whitespace();
+		for word in split_line {
+			nodes.push(word.to_string());
+		}
+		g.add_nodes(&mut nodes);
+	}
+	Ok(g)
+}
 
 fn read_input_into_graph<R: Read>(reader: R) {
 	let mut nodes: Vec<Node> = vec![];
@@ -80,6 +80,7 @@ impl Graph {
 			neighbors: rest,
 		};
 		self.nodes.push(n);
+		new_nodes_str.pop();
 	}
 
 	fn find_node(&mut self, find: &str) -> Option<&Node> {
