@@ -43,6 +43,7 @@ fn main() {
 	let graph_result = read_graph(&graph_file);
 	match graph_result {
 		Ok(graph) => {
+			// let print_graph = graph.print_graph(stdout());
 			read_input(stdin(), &graph);
 		},
 		Err(e) => println!("error! {}", e),
@@ -95,14 +96,14 @@ impl Graph {
         }
     }
 
-    // TODO: handle duplicates
 	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<String>) {
-		let rest;
 		if new_nodes_str.len() == 0 {
 			return;
-		} else {
-			rest = new_nodes_str.split_off(1);
 		}
+		let mut rest = new_nodes_str.split_off(1);
+		rest.sort();
+		//remove duplicates
+		rest.dedup();
 		let n = Node {
 			name: new_nodes_str[0].clone(),
 			neighbors: rest,
@@ -150,10 +151,6 @@ impl Graph {
 		vec![]
 	}
 
-	pub fn print_find_node<W: Write>(&self, mut writer: W, found: &Option<&Node>){
-		let f = found.unwrap();
-		writeln!(writer, "{}", f.name);
-	}
 
 	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<String>) {
 		if path.len() == 0 {
@@ -165,6 +162,21 @@ impl Graph {
 		}
 		writeln!(writer,"");
 	}
+	
+	// pub fn print_find_node<W: Write>(&self, mut writer: W, found: &Option<&Node>){
+	// 	let f = found.unwrap();
+	// 	writeln!(writer, "{}", f.name);
+	// }
+
+	// pub fn print_graph<W: Write>(&self, mut writer: W) {
+	// 	for n in self.nodes.iter() {
+	// 		write!(writer, "Node {}: ", &n.0);
+	// 		for neighbor in &n.1.neighbors {
+	// 			write!(writer, "{} ", neighbor);
+	// 		}
+	// 		writeln!(writer, "");
+	// 	}
+	// }
 
 }
 
