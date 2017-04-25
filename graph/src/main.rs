@@ -18,19 +18,15 @@
 * 2) EOF stops the program (cmd+d on Mac)
 */
 
-use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
 use std::env;
 use std::fs::File;
-use std::collections::{HashSet, HashMap};
+use std::collections::{HashSet,HashMap,VecDeque};
+use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
 
 pub type NodeName = String;
 pub struct Graph {
-	nodes: HashMap<String, Node>,
-}
-
-#[derive(Clone, Eq, PartialEq, Debug, Hash)]
-pub struct Node {
-	neighbors: Vec<NodeName>,
+	//Vec<NodeName> is a list of node's neighbors
+	nodes: HashMap<NodeName, Vec<NodeName>>,
 }
 
 fn main() {
@@ -41,9 +37,10 @@ fn main() {
 	}
 	let graph_file = &args[1];
 	let graph_result = read_graph(&graph_file);
+
+	//if graph was read successfully, accept input
 	match graph_result {
 		Ok(graph) => {
-			// let print_graph = graph.print_graph(stdout());
 			read_input(stdin(), &graph);
 		},
 		Err(e) => println!("error! {}", e),
@@ -62,6 +59,7 @@ fn read_graph(filename: &str) -> Result<Graph>{
 		for word in split_line {
 			nodes.push(word.to_string());
 		}
+		//add nodes to graph
 		g.add_nodes(&mut nodes);
 	}
 	Ok(g)
@@ -82,7 +80,7 @@ fn read_input<R: Read> (reader: R, graph: &Graph) {
 		}
 		let src = inputs.get(0).unwrap();
 		let dst = inputs.get(1).unwrap();
-		let path = graph.bfs(src, dst);
+		let path = graph.path_finder(src, dst);
 		graph.print_path(stdout(), &path);
 
 	}
@@ -96,7 +94,7 @@ impl Graph {
         }
     }
 
-	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<String>) {
+	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<NodeName>) {
 		//no new nodes were inputted
 		if new_nodes_str.len() == 0 {
 			return;
@@ -108,66 +106,63 @@ impl Graph {
 
 		//add neighbors to current node
 		{
-			let entry = self.nodes.entry(new_nodes_str[0].clone()).or_insert(Node {neighbors: Vec::new()});
-			entry.neighbors.append(&mut rest.clone());
+			let curr_name = new_nodes_str[0].clone();
+			let curr = self.nodes.entry(curr_name).or_insert(Vec::new());
+			curr.append(&mut rest.clone());
 		}
 
 		//for each neighbor of current node, add itself to its neighbor's "neighbors" list
 		for neighbor in rest {
-			let nes = self.nodes.entry(neighbor).or_insert(Node {neighbors: Vec::new()});
-			nes.neighbors.push(new_nodes_str[0].clone());
+			let nes = self.nodes.entry(neighbor).or_insert(Vec::new());
+			nes.push(new_nodes_str[0].clone());
 
 		}
 		//will use this vec again in read_graph...clear it out
 		new_nodes_str.drain(..);
 	}
 
-	pub fn find_node(&self, find: &str) -> Option<&Node> {
+	pub fn find_node(&self, find: &str) -> Option<&Vec<NodeName>> {
 		self.nodes.get(find)
 	}
 
-	pub fn bfs(&self, from: &str, to: &str) -> Vec<String> {
-		//vec deque
-		let mut queue = Vec::new();
-		let mut visited = HashSet::<String>::new();
+	pub fn path_finder(&self, from: &str, to: &str) -> Vec<NodeName> {
+		//uses breadth first search
+		//deque will be a vecdeque of vecs, with each vec being a possible path
+		let mut deque = VecDeque::new();
+		let mut visited = HashSet::new();
 		let mut init_path = Vec::new();
+
 		init_path.push(from.to_string());
-		queue.push(init_path);
+		deque.push_back(init_path);
 
-		while !queue.is_empty() {
-			let curr_path_option = queue.pop();
-			if curr_path_option.is_none() { continue; }
+		while !deque.is_empty() {
+			while let Some(mut curr_path) = deque.pop_front() {
+				//get current node
+				let curr_node_name = curr_path.last().unwrap().clone();
 
-			let mut curr_path = curr_path_option.unwrap();
-			/*
-				while let Some(x) = q.pop() {}
-				(String, Vec<String>) because of last()
-			*/
-			let curr_node_name = curr_path.last().unwrap().clone();
-
-			if curr_node_name == to {
-				return curr_path;
-			}
-			//if let some(x) = self.find_node
-			//else continue;
-			let node_option = self.find_node(curr_node_name.as_str());
-			if node_option.is_none() { continue; }
-
-			let node = node_option.unwrap();
-			visited.insert(curr_node_name);
-			for neighbor in &node.neighbors {
-				if !visited.contains(neighbor) {
-					curr_path.push(neighbor.to_string());
-					queue.push(curr_path.clone());
-					curr_path.pop();
+				//if this is destination return its path
+				if curr_node_name == to {
+					return curr_path;
 				}
+				//else if the node is found in the graph
+				if let Some(node_neighbors) = self.find_node(curr_node_name.as_str()) {
+					visited.insert(curr_node_name);
+					//repeat process with each of current node's neighbors
+					for neighbor in node_neighbors {
+						if !visited.contains(neighbor) {
+							curr_path.push(neighbor.to_string());
+							deque.push_back(curr_path.clone());
+							curr_path.pop();
+						}
+					}
+				} else { continue; }
 			}
 		}
 		vec![]
 	}
 
 
-	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<String>) {
+	pub fn print_path<W: Write>(&self, mut writer: W, path: &Vec<NodeName>) {
 		if path.len() == 0 {
 			writeln!(writer, "no path!");
 			return;
@@ -178,26 +173,11 @@ impl Graph {
 		writeln!(writer,"");
 	}
 
-	// pub fn print_find_node<W: Write>(&self, mut writer: W, found: &Option<&Node>){
-	// 	let f = found.unwrap();
-	// 	writeln!(writer, "{}", f.name);
-	// }
-
-	// pub fn print_graph<W: Write>(&self, mut writer: W) {
-	// 	for n in self.nodes.iter() {
-	// 		write!(writer, "Node {}: ", &n.0);
-	// 		for neighbor in &n.1.neighbors {
-	// 			write!(writer, "{} ", neighbor);
-	// 		}
-	// 		writeln!(writer, "");
-	// 	}
-	// }
-
 }
 
 #[cfg(test)]
 mod add_node_tests {
-	use super::{Graph, Node};
+	use super::{Graph, NodeName};
 	use std::collections::HashMap;
 	
 	#[test]
@@ -215,7 +195,7 @@ mod add_node_tests {
 	#[test]
 	fn add_1_nodes_no_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
+		hm.insert("a".to_string(), Vec::new());
 		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hm);
 
 	}
@@ -223,14 +203,16 @@ mod add_node_tests {
 	#[test]
 	fn add_1_nodes_1_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		hm.insert("a".to_string(), vec!["b".to_string()]);
 		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_1_nodes_2_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
+		hm.insert("a".to_string(), vec!["b".to_string(), "c".to_string()]);
+		hm.insert("b".to_string(), vec!["a".to_string()]);
+		hm.insert("d".to_string(), vec!["a".to_string()]);
 		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
 			&hm);
 	}
@@ -238,44 +220,44 @@ mod add_node_tests {
 	#[test]
 	fn add_2_nodes_0_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
-		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
+		hm.insert("a".to_string(), Vec::new());
+		hm.insert("b".to_string(), Vec::new());
 		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_half_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
+		hm.insert("a".to_string(), vec!["b".to_string()]);
+		hm.insert("b".to_string(), Vec::new());
 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_1_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string()]});
+		hm.insert("a".to_string(), vec!["b".to_string()]);
+		hm.insert("b".to_string(), vec!["a".to_string()]);
 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string(), "a".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_2_neighbor() {
 		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
-		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string(), "c".to_string()]});
+		hm.insert("a".to_string(), vec!["b".to_string(), "c".to_string()]);
+		hm.insert("b".to_string(), vec!["a".to_string(), "c".to_string()]);
 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
 			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hm);
 	}
 
-	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashMap<String, Node>) {
+	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashMap<String, Vec<NodeName>>) {
 		let mut g = Graph::new();
 		g.add_nodes(&mut input);
 		assert_eq!(g.nodes.len(), expected_nodes.len());
 		assert_eq!(g.nodes, *expected_nodes);
 	}
 
-	fn add_2_nodes_test_helper(mut input: &mut Vec<String>,mut input_2: &mut Vec<String>, expected_nodes: &HashMap<String, Node>) {
+	fn add_2_nodes_test_helper(mut input: &mut Vec<String>,mut input_2: &mut Vec<String>, expected_nodes: &HashMap<String, Vec<NodeName>>) {
 		let mut g = Graph::new();
 		g.add_nodes(&mut input);
 		g.add_nodes(&mut input_2);
@@ -284,27 +266,27 @@ mod add_node_tests {
 	}
 }
 
-#[cfg(test)]
-mod find_node_tests {
-	use super::{Graph, Node};
-	use std::collections::HashMap;
+// #[cfg(test)]
+// mod find_node_tests {
+// 	use super::{Graph, Node};
+// 	use std::collections::HashMap;
 
-	#[test]
-	fn exist_test() {
-		find_node_helper("a".to_string(), Some(&Node {name:"a".to_string(), neighbors: vec![]}));
-	}
+// 	#[test]
+// 	fn exist_test() {
+// 		find_node_helper("a".to_string(), Some(&Node {name:"a".to_string(), neighbors: vec![]}));
+// 	}
 	
-	#[test]
-	fn not_exist_test() {
-		find_node_helper("b".to_string(), None);
+// 	#[test]
+// 	fn not_exist_test() {
+// 		find_node_helper("b".to_string(), None);
 
-	}
+// 	}
 	
-	fn find_node_helper(input: String, expected_out: Option<&Node>) {
-		let mut graph = Graph::new();
-		graph.add_nodes(&mut vec!["a".to_string()]);
+// 	fn find_node_helper(input: String, expected_out: Option<&Node>) {
+// 		let mut graph = Graph::new();
+// 		graph.add_nodes(&mut vec!["a".to_string()]);
 
-		assert_eq!(graph.find_node(&input), expected_out);
-	}
+// 		assert_eq!(graph.find_node(&input), expected_out);
+// 	}
 
-}
+// }
