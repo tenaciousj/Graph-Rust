@@ -30,7 +30,7 @@ fn main() {
 	}
 }
 
-fn read_graph(filename: &str) ->Result<Graph>{
+fn read_graph(filename: &str) -> Result<Graph>{
 	let file = File::open(filename)?;
 
 	let mut g = Graph::new();
@@ -96,21 +96,28 @@ impl Graph {
 	}
 
 	pub fn bfs(&self, from: &str, to: &str) -> Vec<String> {
-		let mut queue = Vec::<Vec<String>>::new();
+
+		let mut queue = Vec::new();
 		let mut visited = Vec::new();
-		let mut path = Vec::new();
-		path.push(from.to_string());
-		queue.push(path);
+		let mut init_path = Vec::new();
+		init_path.push(from.to_string());
+		queue.push(init_path);
 
 		while !queue.is_empty() {
-			let mut curr_path = queue.pop().unwrap();
-			
+			let curr_path_option = queue.pop();
+			if curr_path_option.is_none() { continue; }
+
+			let mut curr_path = curr_path_option.unwrap();
 			let curr_node_name = curr_path.last().unwrap().clone();
+
 			if curr_node_name == to {
 				return curr_path;
 			}
 
-			let node = self.find_node(curr_node_name.as_str()).unwrap();
+			let node_option = self.find_node(curr_node_name.as_str());
+			if node_option.is_none() { continue; }
+
+			let node = node_option.unwrap();
 			visited.push(curr_node_name);
 			for neighbor in node.neighbors.iter() {
 				if !visited.contains(&neighbor) {
