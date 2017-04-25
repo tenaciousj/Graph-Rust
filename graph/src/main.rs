@@ -11,6 +11,7 @@
 *		a) First word names some node in the graph, the remaining words enumerate its neighbors
 *		b) Every node mentioned as a neighbor must start a line
 *		c) No node may start more than one line
+*       d) The second instance of any duplicate node overwrites the previous instance
 *	 For stdin
 *		a) A query consists of two node names, a starting node (src) and an ending node (dest)
 * 		b) If a node is not in the graph, program will output that path does not exist
@@ -111,10 +112,6 @@ impl Graph {
 	}
 
 	pub fn find_node(&self, find: &str) -> Option<&Node> {
-		// if self.nodes.contains_key(find) {
-		// 	return Some(self.nodes.get(find));
-		// }
-		// None
 		self.nodes.get(find)
 	}
 
@@ -183,65 +180,65 @@ mod add_node_tests {
 	}
 	#[test]
 	fn add_0_nodes() {
-		let hs = HashMap::new();
-		add_1_nodes_test_helper(&mut vec![], &hs);
+		let hm = HashMap::new();
+		add_1_nodes_test_helper(&mut vec![], &hm);
 
 	}
 
 	#[test]
 	fn add_1_nodes_no_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
-		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hs);
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
+		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hm);
 
 	}
 
 	#[test]
 	fn add_1_nodes_1_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hs);
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_1_nodes_2_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
 		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
-			&hs);
+			&hm);
 	}
 
 	#[test]
 	fn add_2_nodes_0_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
-		hs.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
-		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hs);
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec![]});
+		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_half_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		hs.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
-		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hs);
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec![]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_1_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		hs.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string()]});
-		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string(), "a".to_string()], &hs);
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string()]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string(), "a".to_string()], &hm);
 	}
 
 	#[test]
 	fn add_2_nodes_2_neighbor() {
-		let mut hs = HashMap::new();
-		hs.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
-		hs.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string(), "c".to_string()]});
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
+		hm.insert("b".to_string(), Node {name:"b".to_string(), neighbors: vec!["a".to_string(), "c".to_string()]});
 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
-			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hs);
+			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hm);
 	}
 
 	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashMap<String, Node>) {
@@ -263,10 +260,24 @@ mod add_node_tests {
 #[cfg(test)]
 mod find_node_tests {
 	use super::{Graph, Node};
+	use std::collections::HashMap;
 
 	#[test]
-	fn stuff() {
+	fn exist_test() {
+		find_node_helper("a".to_string(), Some(&Node {name:"a".to_string(), neighbors: vec![]}));
+	}
+	
+	#[test]
+	fn not_exist_test() {
+		find_node_helper("b".to_string(), None);
 
+	}
+	
+	fn find_node_helper(input: String, expected_out: Option<&Node>) {
+		let mut graph = Graph::new();
+		graph.add_nodes(&mut vec!["a".to_string()]);
+
+		assert_eq!(graph.find_node(&input), expected_out);
 	}
 
 }
