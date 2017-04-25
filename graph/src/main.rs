@@ -93,6 +93,7 @@ impl Graph {
             nodes: HashMap::new(),
         }
     }
+    //TODO: make sure that a node does not add itself as neighbor
 
 	pub fn add_nodes(&mut self, new_nodes_str: &mut Vec<NodeName>) {
 		//no new nodes were inputted
@@ -240,6 +241,15 @@ mod add_node_tests {
 	}
 
 	#[test]
+	fn add_1_nodes_dup_neighbor() {
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), 
+			neighbors: vec!["b".to_string(), "c".to_string()]});
+		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
+			"c".to_string(),"b".to_string() ], &hm);
+	}
+
+	#[test]
 	fn add_2_nodes_0_neighbor() {
 		let mut hm = HashMap::new();
 		hm.insert("a".to_string(), HashSet::new());
@@ -301,27 +311,35 @@ mod add_node_tests {
 	}
 }
 
-// #[cfg(test)]
-// mod find_node_tests {
-// 	use super::{Graph, Node};
-// 	use std::collections::HashMap;
+#[cfg(test)]
+mod find_node_tests {
+	use super::Graph;
+	use std::collections::HashMap;
 
-// 	#[test]
-// 	fn exist_test() {
-// 		find_node_helper("a".to_string(), Some(&Node {name:"a".to_string(), neighbors: vec![]}));
-// 	}
+	#[test]
+	fn exist_test() {
+		find_node_helper("a".to_string(), Some(&Node {name:"a".to_string(), neighbors: vec![]}));
+	}
 	
-// 	#[test]
-// 	fn not_exist_test() {
-// 		find_node_helper("b".to_string(), None);
+	#[test]
+	fn not_exist_test() {
+		find_node_helper("b".to_string(), None);
 
-// 	}
+	}
 	
-// 	fn find_node_helper(input: String, expected_out: Option<&Node>) {
-// 		let mut graph = Graph::new();
-// 		graph.add_nodes(&mut vec!["a".to_string()]);
+	fn find_node_helper(input: String, expected_out: Option<&Node>) {
+		let mut graph = Graph::new();
+		graph.add_nodes(&mut vec!["a".to_string()]);
 
-// 		assert_eq!(graph.find_node(&input), expected_out);
-// 	}
+		assert_eq!(graph.find_node(&input), expected_out);
+	}
 
-// }
+}
+
+#[cfg(test)] 
+mod path_finder_tests {
+	use super::Graph;
+
+	// #[test] 
+	
+}
