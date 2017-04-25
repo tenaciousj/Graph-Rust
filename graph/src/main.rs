@@ -12,6 +12,7 @@
 *		b) Every node mentioned as a neighbor must start a line
 *		c) No node may start more than one line
 *       d) The second instance of any duplicate node overwrites the previous instance
+* 		e) Assumes that a node will not list itself as a neighbor
 *	 For stdin
 *		a) A query consists of two node names, a starting node (src) and an ending node (dest)
 * 		b) If a node is not in the graph, program will output that path does not exist
@@ -243,14 +244,6 @@ mod add_node_tests {
 			&hm);
 	}
 
-	#[test]
-	fn add_1_nodes_dup_neighbor() {
-		let mut hm = HashMap::new();
-		hm.insert("a".to_string(), Node {name:"a".to_string(), 
-			neighbors: vec!["b".to_string(), "c".to_string()]});
-		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
-			"c".to_string(),"b".to_string() ], &hm);
-	}
 
 	#[test]
 	fn add_2_nodes_0_neighbor() {
@@ -317,11 +310,11 @@ mod add_node_tests {
 #[cfg(test)]
 mod find_node_tests {
 	use super::Graph;
-	use std::collections::HashMap;
+	use std::collections::HashSet;
 
 	#[test]
 	fn exist_test() {
-		find_node_helper("a".to_string(), Some(&vec![]));
+		find_node_helper("a".to_string(), Some(&HashSet::new()));
 	}
 	
 	#[test]
@@ -330,7 +323,7 @@ mod find_node_tests {
 
 	}
 	
-	fn find_node_helper(input: String, expected_out: Option<&Vec<String>>) {
+	fn find_node_helper(input: String, expected_out: Option<&HashSet<String>>) {
 		let mut graph = Graph::new();
 		graph.add_nodes(&mut vec!["a".to_string()]);
 
@@ -342,7 +335,6 @@ mod find_node_tests {
 #[cfg(test)] 
 mod path_finder_tests {
 	use super::Graph;
-	use std::collections::{HashSet, HashMap};
 
 	#[test]
 	fn path_to_self() {
