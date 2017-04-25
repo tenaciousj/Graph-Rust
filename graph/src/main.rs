@@ -132,6 +132,9 @@ impl Graph {
 	pub fn path_finder(&self, from: &str, to: &str) -> Vec<NodeName> {
 		//uses breadth first search
 		//deque will be a vecdeque of vecs, with each vec being a possible path
+		if from == to {
+			return vec![from.to_string()];
+		}
 		let mut deque = VecDeque::new();
 		let mut visited = HashSet::new();
 		let mut init_path = Vec::new();
@@ -344,8 +347,17 @@ mod path_finder_tests {
 	#[test]
 	fn path_to_self() {
 		path_finder_helper("a", "a", &vec![]);
-	}	
+	}
 
+	#[test]
+	fn src_does_not_exist() {
+		path_finder_helper("e", "a", &vec![]);
+	}
+
+	#[test]
+	fn dst_does_not_exist() {
+		path_finder_helper("a", "e", &vec![]);
+	}
 	fn path_finder_helper(src: &str, dst: &str, expected_out: &Vec<String>) {
 		let mut g = Graph::new();
 		g.add_nodes(&mut vec!["a".to_string(), "b".to_string(), "d".to_string()]);
