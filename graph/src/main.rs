@@ -25,8 +25,8 @@ use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
 
 pub type NodeName = String;
 pub struct Graph {
-	//Vec<NodeName> is a list of node's neighbors
-	nodes: HashMap<NodeName, Vec<NodeName>>,
+	//HashSet<NodeName> is a list of node's neighbors
+	nodes: HashMap<NodeName, HashSet<NodeName>>,
 }
 
 fn main() {
@@ -107,21 +107,25 @@ impl Graph {
 		//add neighbors to current node
 		{
 			let curr_name = new_nodes_str[0].clone();
-			let curr = self.nodes.entry(curr_name).or_insert(Vec::new());
-			curr.append(&mut rest.clone());
+			let curr = self.nodes.entry(curr_name).or_insert(HashSet::new());
+			for neighbor in rest.clone() {
+				//check to make sure its not adding itself as a neighbor
+				if neighbor != new_nodes_str[0].clone() {
+					curr.insert(neighbor);
+				}
+			}
 		}
 
 		//for each neighbor of current node, add itself to its neighbor's "neighbors" list
 		for neighbor in rest {
-			let nes = self.nodes.entry(neighbor).or_insert(Vec::new());
-			nes.push(new_nodes_str[0].clone());
-
+			let nes = self.nodes.entry(neighbor).or_insert(HashSet::new());
+			nes.insert(new_nodes_str[0].clone());
 		}
 		//will use this vec again in read_graph...clear it out
 		new_nodes_str.drain(..);
 	}
 
-	pub fn find_node(&self, find: &str) -> Option<&Vec<NodeName>> {
+	pub fn find_node(&self, find: &str) -> Option<&HashSet<NodeName>> {
 		self.nodes.get(find)
 	}
 
@@ -175,105 +179,137 @@ impl Graph {
 
 }
 
-// #[cfg(test)]
-// mod add_node_tests {
-// 	use super::{Graph, NodeName};
-// 	use std::collections::HashMap;
+
+#[cfg(test)]
+mod add_node_tests {
+	use super::{Graph, NodeName};
+	use std::collections::{HashMap,HashSet};
 	
-// 	#[test]
-// 	fn new_test() {
-// 		let graph = Graph::new();
-// 		assert_eq!(graph.nodes.len(), 0);
-// 	}
-// 	#[test]
-// 	fn add_0_nodes() {
-// 		let hm = HashMap::new();
-// 		add_1_nodes_test_helper(&mut vec![], &hm);
+	#[test]
+	fn new_test() {
+		let graph = Graph::new();
+		assert_eq!(graph.nodes.len(), 0);
+	}
+	#[test]
+	fn add_0_nodes() {
+		let hm = HashMap::new();
+		add_1_nodes_test_helper(&mut vec![], &hm);
 
-// 	}
+	}
 
-// 	#[test]
-// 	fn add_1_nodes_no_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), Vec::new());
-// 		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hm);
+	#[test]
+	fn add_1_nodes_no_neighbor() {
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), HashSet::new());
+		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hm);
 
-// 	}
+	}
 
-// 	#[test]
-// 	fn add_1_nodes_1_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), vec!["b".to_string()]);
-// 		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hm);
-// 	}
+	#[test]
+	fn add_1_nodes_1_neighbor() {
+		let mut hm = HashMap::new();
+		let mut hs1 = HashSet::new();
+		let mut hs2 = HashSet::new();
 
-// 	#[test]
-// 	fn add_1_nodes_2_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), vec!["b".to_string(), "c".to_string()]);
-// 		hm.insert("b".to_string(), vec!["a".to_string()]);
-// 		hm.insert("d".to_string(), vec!["a".to_string()]);
-// 		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
-// 			&hm);
-// 	}
+		hs1.insert("b".to_string());
+		hm.insert("a".to_string(), hs1);
 
-// 	#[test]
-// 	fn add_1_nodes_dup_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), Node {name:"a".to_string(), 
-// 			neighbors: vec!["b".to_string(), "c".to_string()]});
-// 		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
-// 			"c".to_string(),"b".to_string() ], &hm);
-// 	}
+		hs2.insert("a".to_string());
+		hm.insert("b".to_string(), hs2);
+		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hm);
+	}
 
-// 	#[test]
-// 	fn add_2_nodes_0_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), Vec::new());
-// 		hm.insert("b".to_string(), Vec::new());
-// 		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hm);
-// 	}
+	#[test]
+	fn add_1_nodes_2_neighbor() {
+		let mut hm = HashMap::new();
+		let mut hs1 = HashSet::new();
+		let mut hs2 = HashSet::new();
+		let mut hs3 = HashSet::new();
 
-// 	#[test]
-// 	fn add_2_nodes_half_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), vec!["b".to_string()]);
-// 		hm.insert("b".to_string(), Vec::new());
-// 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hm);
-// 	}
+		hs1.insert("b".to_string());
+		hs1.insert("c".to_string());
+		hm.insert("a".to_string(), hs1);
 
-// 	#[test]
-// 	fn add_2_nodes_1_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), vec!["b".to_string()]);
-// 		hm.insert("b".to_string(), vec!["a".to_string()]);
-// 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string(), "a".to_string()], &hm);
-// 	}
+		hs2.insert("a".to_string());
+		hm.insert("b".to_string(), hs2);
 
-// 	#[test]
-// 	fn add_2_nodes_2_neighbor() {
-// 		let mut hm = HashMap::new();
-// 		hm.insert("a".to_string(), vec!["b".to_string(), "c".to_string()]);
-// 		hm.insert("b".to_string(), vec!["a".to_string(), "c".to_string()]);
-// 		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
-// 			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hm);
-// 	}
+		hs3.insert("a".to_string());
+		hm.insert("c".to_string(), hs3);
 
-// 	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashMap<String, Vec<NodeName>>) {
-// 		let mut g = Graph::new();
-// 		g.add_nodes(&mut input);
-// 		assert_eq!(g.nodes.len(), expected_nodes.len());
-// 		assert_eq!(g.nodes, *expected_nodes);
-// 	}
+		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
+			&hm);
+	}
 
-// 	fn add_2_nodes_test_helper(mut input: &mut Vec<String>,mut input_2: &mut Vec<String>, expected_nodes: &HashMap<String, Vec<NodeName>>) {
-// 		let mut g = Graph::new();
-// 		g.add_nodes(&mut input);
-// 		g.add_nodes(&mut input_2);
-// 		assert_eq!(g.nodes.len(), expected_nodes.len());
-// 		assert_eq!(g.nodes, *expected_nodes);
-// 	}
-// }
+	#[test]
+	fn add_1_nodes_dup_neighbor() {
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), Node {name:"a".to_string(), 
+			neighbors: vec!["b".to_string(), "c".to_string()]});
+		add_1_nodes_test_helper(&mut vec![ "a".to_string(), "b".to_string(),
+			"c".to_string(),"b".to_string() ], &hm);
+	}
+
+	#[test]
+	fn add_2_nodes_0_neighbor() {
+		let mut hm = HashMap::new();
+		hm.insert("a".to_string(), HashSet::new());
+		hm.insert("b".to_string(), HashSet::new());
+		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hm);
+	}
+
+	#[test]
+	fn add_2_nodes_1_neighbor() {
+		let mut hm = HashMap::new();
+		let mut hs1 = HashSet::new();
+		let mut hs2 = HashSet::new();
+
+		hs1.insert("b".to_string());
+		hs2.insert("a".to_string());
+
+		hm.insert("a".to_string(), hs1);
+		hm.insert("b".to_string(), hs2);
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hm);
+	}
+
+
+	#[test]
+	fn add_2_nodes_2_neighbor() {
+		let mut hm = HashMap::new();
+		let mut hs1 = HashSet::new();
+		let mut hs2 = HashSet::new();
+		let mut hs3 = HashSet::new();
+
+		hs1.insert("b".to_string());
+		hs1.insert("c".to_string());
+
+		hs2.insert("a".to_string());
+		hs2.insert("c".to_string());
+
+		hs3.insert("a".to_string());
+		hs3.insert("b".to_string());
+
+		hm.insert("a".to_string(), hs1);
+		hm.insert("b".to_string(), hs2);
+		hm.insert("c".to_string(), hs3);
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
+			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hm);
+	}
+
+	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashMap<String, HashSet<NodeName>>) {
+		let mut g = Graph::new();
+		g.add_nodes(&mut input);
+		assert_eq!(g.nodes.len(), expected_nodes.len());
+		assert_eq!(g.nodes, *expected_nodes);
+	}
+
+	fn add_2_nodes_test_helper(mut input: &mut Vec<String>,mut input_2: &mut Vec<String>, expected_nodes: &HashMap<String, HashSet<NodeName>>) {
+		let mut g = Graph::new();
+		g.add_nodes(&mut input);
+		g.add_nodes(&mut input_2);
+		assert_eq!(g.nodes.len(), expected_nodes.len());
+		assert_eq!(g.nodes, *expected_nodes);
+	}
+}
 
 #[cfg(test)]
 mod find_node_tests {
