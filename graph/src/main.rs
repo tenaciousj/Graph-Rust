@@ -24,13 +24,13 @@ fn main() {
 	}
 	let graph_file = &args[1];
 	let graph_result = read_graph(&graph_file);
-	let mut graph;
 	match graph_result {
 		Ok(g) => {
+			let mut graph;
 			graph = g; 
 			graph.print_edge(stdout());
 		},
-		Err(e) => println!("error! {}", e),
+		Err(e) => panic!("error! {}", e),
 	}
 	// read_input_into_graph(stdin(), g);}
 }
