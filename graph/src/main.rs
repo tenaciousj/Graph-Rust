@@ -1,3 +1,22 @@
+/**
+* graph
+* an implementation of a graph data structure
+* Reads in text from file to construct a graph,
+* then takes two nodes (src and dest) via stdin
+* to print a path between them
+*
+* Assumptions
+* 1) Assume valid input
+*	 For graph file
+*		a) First word names some node in the graph, the remaining words enumerate its neighbors
+*		b) Every node mentioned as a neighbor must start a line
+*		c) No node may start more than one line
+*	 For stdin
+*		a) A query consists of two node names, a starting node (src) and an ending node (dest)
+* 		b) If a node is not in the graph, program will output that path does not exist
+* 2) EOF stops the program (cmd+d on Mac)
+*/
+
 #![allow(dead_code)]
 use std::collections::HashMap;
 use std::io::{Read,BufReader,BufRead,stdout,Write,stdin,Result};
