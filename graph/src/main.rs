@@ -26,7 +26,7 @@ pub struct Graph {
 	nodes: HashSet<Node>,
 }
 
-#[derive(Clone, Eq, PartialEq, Debug, PartialOrd, Ord, Hash)]
+#[derive(Clone, Eq, PartialEq, Debug, Hash)]
 pub struct Node {
 	name: String,
 	neighbors: Vec<String>,
@@ -121,7 +121,7 @@ impl Graph {
 	pub fn bfs(&self, from: &str, to: &str) -> Vec<String> {
 
 		let mut queue = Vec::new();
-		let mut visited = Vec::new();
+		let mut visited = HashSet::<String>::new();
 		let mut init_path = Vec::new();
 		init_path.push(from.to_string());
 		queue.push(init_path);
@@ -141,9 +141,9 @@ impl Graph {
 			if node_option.is_none() { continue; }
 
 			let node = node_option.unwrap();
-			visited.push(curr_node_name);
+			visited.insert(curr_node_name);
 			for neighbor in node.neighbors.iter() {
-				if !visited.contains(&neighbor) {
+				if !visited.contains(neighbor) {
 					curr_path.push(neighbor.clone().to_string());
 					queue.push(curr_path.clone());
 					curr_path.pop();
@@ -183,8 +183,8 @@ mod tests {
 
 	#[test]
 	fn add_0_nodes() {
-		let mut hs = HashSet::new();
-		add_nodes_test_helper(&mut vec![], &hs);
+		let hs = HashSet::new();
+		add_1_nodes_test_helper(&mut vec![], &hs);
 
 	}
 
@@ -192,7 +192,7 @@ mod tests {
 	fn add_1_nodes_no_neighbor() {
 		let mut hs = HashSet::new();
 		hs.insert(Node {name:"a".to_string(), neighbors: vec![]});
-		add_nodes_test_helper(&mut vec!["a".to_string()], &hs);
+		add_1_nodes_test_helper(&mut vec!["a".to_string()], &hs);
 
 	}
 
@@ -200,23 +200,62 @@ mod tests {
 	fn add_1_nodes_1_neighbor() {
 		let mut hs = HashSet::new();
 		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
-		add_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hs);
+		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &hs);
 	}
 
+	#[test]
 	fn add_1_nodes_2_neighbor() {
 		let mut hs = HashSet::new();
 		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
-		add_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
+		add_1_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
 			&hs);
 	}
 
+	#[test]
+	fn add_2_nodes_0_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec![]});
+		hs.insert(Node {name:"b".to_string(), neighbors: vec![]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string()], &mut vec!["b".to_string()], &hs);
+	}
 
+	#[test]
+	fn add_2_nodes_half_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		hs.insert(Node {name:"b".to_string(), neighbors: vec![]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string()], &hs);
+	}
 
-	fn add_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashSet<Node>) {
+	#[test]
+	fn add_2_nodes_1_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string()]});
+		hs.insert(Node {name:"b".to_string(), neighbors: vec!["a".to_string()]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string()], &mut vec!["b".to_string(), "a".to_string()], &hs);
+	}
+
+	#[test]
+	fn add_2_nodes_2_neighbor() {
+		let mut hs = HashSet::new();
+		hs.insert(Node {name:"a".to_string(), neighbors: vec!["b".to_string(), "c".to_string()]});
+		hs.insert(Node {name:"b".to_string(), neighbors: vec!["a".to_string(), "c".to_string()]});
+		add_2_nodes_test_helper(&mut vec!["a".to_string(), "b".to_string(), "c".to_string()], 
+			&mut vec!["b".to_string(), "a".to_string(), "c".to_string()], &hs);
+	}
+
+	fn add_1_nodes_test_helper(mut input: &mut Vec<String>, expected_nodes: &HashSet<Node>) {
 		let mut g = Graph::new();
 		g.add_nodes(&mut input);
 		assert_eq!(g.nodes.len(), expected_nodes.len());
 		assert_eq!(g.nodes, *expected_nodes);
+	}
 
+	fn add_2_nodes_test_helper(mut input: &mut Vec<String>,mut input_2: &mut Vec<String>, expected_nodes: &HashSet<Node>) {
+		let mut g = Graph::new();
+		g.add_nodes(&mut input);
+		g.add_nodes(&mut input_2);
+		assert_eq!(g.nodes.len(), expected_nodes.len());
+		assert_eq!(g.nodes, *expected_nodes);
 	}
 }
